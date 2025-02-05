@@ -431,6 +431,90 @@ export const stateCoordinates = {
       [87.87, 26.78],
     ],
   },
+  delhi: {
+    name: "Delhi",
+    coordinates: [
+      [76.84, 28.87],
+      [77.32, 28.89],
+      [77.34, 28.52],
+      [76.87, 28.5],
+      [76.84, 28.87],
+    ],
+  },
+  puducherry: {
+    name: "Puducherry",
+    coordinates: [
+      [79.82, 11.93],
+      [79.86, 11.95],
+      [79.87, 11.92],
+      [79.83, 11.9],
+      [79.82, 11.93],
+    ],
+  },
+  chandigarh: {
+    name: "Chandigarh",
+    coordinates: [
+      [76.75, 30.75],
+      [76.79, 30.75],
+      [76.79, 30.71],
+      [76.75, 30.71],
+      [76.75, 30.75],
+    ],
+  },
+  "jammu-and-kashmir": {
+    name: "Jammu and Kashmir",
+    coordinates: [
+      [74.87, 34.52],
+      [76.32, 34.78],
+      [77.84, 34.32],
+      [77.32, 33.45],
+      [75.87, 33.12],
+      [74.35, 33.78],
+      [74.87, 34.52],
+    ],
+  },
+  ladakh: {
+    name: "Ladakh",
+    coordinates: [
+      [77.87, 34.52],
+      [78.92, 34.78],
+      [79.84, 34.32],
+      [79.32, 33.45],
+      [78.87, 33.12],
+      [77.35, 33.78],
+      [77.87, 34.52],
+    ],
+  },
+  "andaman-and-nicobar-islands": {
+    name: "Andaman and Nicobar Islands",
+    coordinates: [
+      [92.75, 13.25],
+      [92.95, 13.2],
+      [93.05, 12.95],
+      [92.85, 12.9],
+      [92.75, 13.25],
+    ],
+  },
+  "dadra-and-nagar-haveli-and-daman-and-diu": {
+    name: "Dadra and Nagar Haveli and Daman and Diu",
+    coordinates: [
+      [72.85, 20.42],
+      [73.02, 20.45],
+      [73.05, 20.32],
+      [72.87, 20.3],
+      [72.85, 20.42],
+    ],
+  },
+  lakshadweep: {
+    name: "Lakshadweep",
+    coordinates: [
+      [72.75, 10.85],
+      [72.85, 10.8],
+      [72.95, 10.65],
+      [72.85, 10.6],
+      [72.75, 10.85],
+    ],
+  },
 };
 
 // Helper function to normalize coordinates

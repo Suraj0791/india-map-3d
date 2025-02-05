@@ -3,11 +3,9 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { fetchTransactionData } from "../services/phonepeService";
-import {
-  stateCoordinates,
-  normalizeCoordinates,
-} from "../data/india-states-coordinates";
+import { loadGeoJSON } from "../data/india-geojson";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { normalizeGeoJSONCoordinates } from '../utils/geo-utils';
 
 // HoverInfo Component with transaction data
 const HoverInfo = ({ data }) => {
@@ -57,29 +55,40 @@ const Stats = ({ totalStats }) => {
   );
 };
 
-const StateShape = ({ state, onHover, onHoverEnd }) => {
-  const height = Math.log(state.metric[0].count) / 20 || 0.5;
+const StateShape = ({ feature, transactionData, onHover, onHoverEnd }) => {
+  const stateName = feature.properties.NAME_1.toLowerCase().replace(
+    /\s+/g,
+    "-"
+  );
+  const stateData = transactionData?.find((data) => data.name === stateName);
+
+  if (!stateData) return null;
+
+  const height = Math.log(stateData.metric[0].count) / 20 || 0.5;
   const color = new THREE.Color().setHSL(0.6 - height * 0.2, 0.8, 0.5);
 
-  const stateInfo = stateCoordinates[state.name.toLowerCase()];
-  if (!stateInfo?.coordinates) return null;
+  const coordinates = feature.geometry.type === "MultiPolygon"
+    ? feature.geometry.coordinates[0][0]
+    : feature.geometry.coordinates[0];
 
-  const normalizedCoords = normalizeCoordinates(stateInfo.coordinates);
+  const normalizedCoords = normalizeGeoJSONCoordinates(coordinates);
+
+  const shape = new THREE.Shape();
+  normalizedCoords.forEach(([x, y], i) => {
+    if (i === 0) {
+      shape.moveTo(x, y);
+    } else {
+      shape.lineTo(x, y);
+    }
+  });
 
   return (
     <mesh
       position={[0, 0, height / 2]}
-      onPointerOver={() => onHover(state)}
+      onPointerOver={() => onHover(stateData)}
       onPointerOut={onHoverEnd}
     >
-      <extrudeGeometry
-        args={[
-          new THREE.Shape(
-            normalizedCoords.map(([x, y]) => new THREE.Vector2(x, y))
-          ),
-          { depth: height, bevelEnabled: false },
-        ]}
-      />
+      <extrudeGeometry args={[shape, { depth: height, bevelEnabled: false }]} />
       <meshStandardMaterial color={color} metalness={0.2} roughness={0.8} />
     </mesh>
   );
@@ -123,7 +132,7 @@ class ErrorBoundary extends React.Component {
 const IndiaMap = () => {
   const [hoverData, setHoverData] = useState(null);
   const [transactionData, setTransactionData] = useState(null);
-  const [stateData, setStateData] = useState([]);
+  const [geoData, setGeoData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -131,22 +140,22 @@ const IndiaMap = () => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const data = await fetchTransactionData();
-        setStateData(data.data.hoverDataList);
+        setError(null); // Reset error state
+        
+        const [transData, geoJSON] = await Promise.all([
+          fetchTransactionData(),
+          loadGeoJSON(),
+        ]);
 
-        const totals = data.data.hoverDataList.reduce(
-          (acc, state) => {
-            acc.totalCount += state.metric[0].count;
-            acc.totalAmount += state.metric[0].amount;
-            return acc;
-          },
-          { totalCount: 0, totalAmount: 0 }
-        );
+        if (!geoJSON || !geoJSON.features) {
+          throw new Error('Invalid GeoJSON data');
+        }
 
-        setTransactionData(totals);
+        setTransactionData(transData.data.hoverDataList);
+        setGeoData(geoJSON);
       } catch (error) {
         console.error("Error loading data:", error);
-        setError(error);
+        setError(error.message || 'Failed to load map data');
       } finally {
         setIsLoading(false);
       }
@@ -158,6 +167,8 @@ const IndiaMap = () => {
   if (isLoading) return <LoadingSpinner />;
   if (error)
     return <div style={{ color: "white" }}>Error loading map data</div>;
+  if (!geoData)
+    return <div style={{ color: "white" }}>No map data available</div>;
 
   return (
     <ErrorBoundary>
@@ -177,10 +188,11 @@ const IndiaMap = () => {
 
           <Suspense fallback={null}>
             <group rotation={[-Math.PI / 2, 0, 0]}>
-              {stateData.map((state, i) => (
+              {geoData.features.map((feature, i) => (
                 <StateShape
                   key={i}
-                  state={state}
+                  feature={feature}
+                  transactionData={transactionData}
                   onHover={setHoverData}
                   onHoverEnd={() => setHoverData(null)}
                 />
@@ -198,7 +210,20 @@ const IndiaMap = () => {
         </Canvas>
 
         <HoverInfo data={hoverData} />
-        {transactionData && <Stats totalStats={transactionData} />}
+        {transactionData && (
+          <Stats
+            totalStats={{
+              totalCount: transactionData.reduce(
+                (acc, state) => acc + state.metric[0].count,
+                0
+              ),
+              totalAmount: transactionData.reduce(
+                (acc, state) => acc + state.metric[0].amount,
+                0
+              ),
+            }}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

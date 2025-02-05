@@ -287,6 +287,86 @@ export const fetchTransactionData = async (year = 2024, quarter = 1) => {
               },
             ],
           },
+          {
+            name: "delhi",
+            metric: [
+              {
+                type: "TOTAL",
+                count: 42345678,
+                amount: 7890123456789,
+              },
+            ],
+          },
+          {
+            name: "puducherry",
+            metric: [
+              {
+                type: "TOTAL",
+                count: 3456789,
+                amount: 567890123456,
+              },
+            ],
+          },
+          {
+            name: "chandigarh",
+            metric: [
+              {
+                type: "TOTAL",
+                count: 4567890,
+                amount: 678901234567,
+              },
+            ],
+          },
+          {
+            name: "jammu-and-kashmir",
+            metric: [
+              {
+                type: "TOTAL",
+                count: 12345678,
+                amount: 2345678901234,
+              },
+            ],
+          },
+          {
+            name: "ladakh",
+            metric: [
+              {
+                type: "TOTAL",
+                count: 987654,
+                amount: 123456789012,
+              },
+            ],
+          },
+          {
+            name: "andaman-and-nicobar-islands",
+            metric: [
+              {
+                type: "TOTAL",
+                count: 876543,
+                amount: 98765432123,
+              },
+            ],
+          },
+          {
+            name: "dadra-and-nagar-haveli-and-daman-and-diu",
+            metric: [
+              {
+                type: "TOTAL",
+                count: 1234567,
+                amount: 234567890123,
+              },
+            ],
+          },
+          {
+            name: "lakshadweep",
+            metric: [
+              {
+                type: "TOTAL",
+                count: 234567,
+                amount: 34567890123,
+              },
+            ],
+          },
         ],
       },
     };
