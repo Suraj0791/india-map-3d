@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { fetchTransactionData } from "../services/phonepeService";
 import { loadGeoJSON } from "../data/india-geojson";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { normalizeGeoJSONCoordinates } from '../utils/geo-utils';
+import { normalizeGeoJSONCoordinates } from "../utils/geo-utils";
 
 // HoverInfo Component with transaction data
 const HoverInfo = ({ data }) => {
@@ -64,12 +64,23 @@ const StateShape = ({ feature, transactionData, onHover, onHoverEnd }) => {
 
   if (!stateData) return null;
 
-  const height = Math.log(stateData.metric[0].count) / 20 || 0.5;
-  const color = new THREE.Color().setHSL(0.6 - height * 0.2, 0.8, 0.5);
+  // Improved height calculation
+  const maxCount = Math.max(...transactionData.map((d) => d.metric[0].count));
+  const minHeight = 0.5; // Increased minimum height
+  const maxHeight = 3; // Increased maximum height
+  const height =
+    minHeight +
+    (stateData.metric[0].count / maxCount) * (maxHeight - minHeight);
 
-  const coordinates = feature.geometry.type === "MultiPolygon"
-    ? feature.geometry.coordinates[0][0]
-    : feature.geometry.coordinates[0];
+  // Dynamic color based on transaction amount
+  const maxAmount = Math.max(...transactionData.map((d) => d.metric[0].amount));
+  const hue = 0.6 - (stateData.metric[0].amount / maxAmount) * 0.4;
+  const color = new THREE.Color().setHSL(hue, 0.7, 0.5);
+
+  const coordinates =
+    feature.geometry.type === "MultiPolygon"
+      ? feature.geometry.coordinates[0][0]
+      : feature.geometry.coordinates[0];
 
   const normalizedCoords = normalizeGeoJSONCoordinates(coordinates);
 
@@ -87,9 +98,29 @@ const StateShape = ({ feature, transactionData, onHover, onHoverEnd }) => {
       position={[0, 0, height / 2]}
       onPointerOver={() => onHover(stateData)}
       onPointerOut={onHoverEnd}
+      castShadow
+      receiveShadow
     >
-      <extrudeGeometry args={[shape, { depth: height, bevelEnabled: false }]} />
-      <meshStandardMaterial color={color} metalness={0.2} roughness={0.8} />
+      <extrudeGeometry
+        args={[
+          shape,
+          {
+            depth: height,
+            bevelEnabled: true,
+            bevelThickness: 0.2,
+            bevelSize: 0.2,
+            bevelSegments: 5,
+          },
+        ]}
+      />
+      <meshPhysicalMaterial
+        color={color}
+        metalness={0.2}
+        roughness={0.8}
+        clearcoat={0.5}
+        clearcoatRoughness={0.3}
+        side={THREE.DoubleSide}
+      />
     </mesh>
   );
 };
@@ -141,21 +172,21 @@ const IndiaMap = () => {
       try {
         setIsLoading(true);
         setError(null); // Reset error state
-        
+
         const [transData, geoJSON] = await Promise.all([
           fetchTransactionData(),
           loadGeoJSON(),
         ]);
 
         if (!geoJSON || !geoJSON.features) {
-          throw new Error('Invalid GeoJSON data');
+          throw new Error("Invalid GeoJSON data");
         }
 
         setTransactionData(transData.data.hoverDataList);
         setGeoData(geoJSON);
       } catch (error) {
         console.error("Error loading data:", error);
-        setError(error.message || 'Failed to load map data');
+        setError(error.message || "Failed to load map data");
       } finally {
         setIsLoading(false);
       }
@@ -180,14 +211,33 @@ const IndiaMap = () => {
           position: "relative",
         }}
       >
-        <Canvas>
-          <PerspectiveCamera makeDefault position={[0, 75, 100]} />
-          <ambientLight intensity={0.6} />
-          <pointLight position={[100, 100, 100]} intensity={0.8} />
-          <pointLight position={[-100, -100, -100]} intensity={0.5} />
+        <Canvas
+          camera={{
+            position: [0, 80, 120], // Moved camera back and up
+            fov: 45,
+            near: 1,
+            far: 1000,
+          }}
+          shadows
+        >
+          <color attach="background" args={["#1a0b2e"]} />
+          <fog attach="fog" args={["#1a0b2e", 100, 200]} />
+
+          <ambientLight intensity={0.5} />
+          <directionalLight
+            position={[50, 50, 25]}
+            intensity={1}
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+          />
+          <pointLight position={[-50, -50, -25]} intensity={0.5} />
 
           <Suspense fallback={null}>
-            <group rotation={[-Math.PI / 2, 0, 0]}>
+            <group
+              rotation={[-0.1, 0, 0]} // Slight tilt to show more of southern states
+              position={[0, -30, 0]} // Moved down to center
+            >
               {geoData.features.map((feature, i) => (
                 <StateShape
                   key={i}
@@ -204,8 +254,14 @@ const IndiaMap = () => {
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
-            minDistance={50}
-            maxDistance={200}
+            minDistance={100}
+            maxDistance={300}
+            minPolarAngle={0}
+            maxPolarAngle={Math.PI / 2.1}
+            target={[0, -30, 0]}
+            maxPolarAngle={Math.PI / 2}
+            minAzimuthAngle={-Math.PI / 4}
+            maxAzimuthAngle={Math.PI / 4}
           />
         </Canvas>
 
