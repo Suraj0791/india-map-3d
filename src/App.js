@@ -1,11 +1,8 @@
-import IndiaMap from './components/IndiaMap';
+import React from "react";
+import IndiaMap from "./components/IndiaMap";
 
 function App() {
-  return (
-    <div className="App">
-      <IndiaMap />
-    </div>
-  );
+  return <IndiaMap />;
 }
 
 export default App;

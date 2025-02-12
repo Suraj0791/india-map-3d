@@ -1,0 +1,37 @@
+{
+    "data": {
+      "hoverData": {
+        "state": {
+          "andhra pradesh": { "total": 12345678 },
+          "arunachal pradesh": { "total": 234567 },
+          "assam": { "total": 345678 },
+          "bihar": { "total": 4567890 },
+          "chhattisgarh": { "total": 567890 },
+          "goa": { "total": 678901 },
+          "gujarat": { "total": 7890123 },
+          "haryana": { "total": 890123 },
+          "himachal pradesh": { "total": 901234 },
+          "jharkhand": { "total": 123456 },
+          "karnataka": { "total": 2345678 },
+          "kerala": { "total": 3456789 },
+          "madhya pradesh": { "total": 4567890 },
+          "maharashtra": { "total": 5678901 },
+          "manipur": { "total": 678902 },
+          "meghalaya": { "total": 789013 },
+          "mizoram": { "total": 890124 },
+          "nagaland": { "total": 901235 },
+          "odisha": { "total": 123457 },
+          "punjab": { "total": 234568 },
+          "rajasthan": { "total": 3456790 },
+          "sikkim": { "total": 456780 },
+          "tamil nadu": { "total": 567891 },
+          "telangana": { "total": 6789023 },
+          "tripura": { "total": 789034 },
+          "uttar pradesh": { "total": 8901456 },
+          "uttarakhand": { "total": 901256 },
+          "west bengal": { "total": 1234678 }
+        }
+      }
+    }
+  }
+  
