@@ -6,6 +6,7 @@ const INDIA_GEOJSON_URL = '/india.geojson';
 const IndiaMap = () => {
   const [geoData, setGeoData] = useState(null);
   const [hoverData, setHoverData] = useState(null);
+  const [tooltip, setTooltip] = useState(null);
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/PhonePe/pulse/master/data/map/transaction/hover/country/india/2021/1.json')
@@ -22,51 +23,127 @@ const IndiaMap = () => {
 
   const pathGenerator = d3.geoPath().projection(projection);
 
+  const getColor = (stateData) => {
+    if (!stateData) return 'gray';
+    const amount = stateData.metric[0].amount;
+    return d3.interpolatePlasma(amount / 1e12); // Dynamic color based on transaction amount
+  };
+
+  const create3DBar = (centroid, amount, index, color) => {
+    const barHeight = Math.max(2, Math.log(amount) * 2); // Dynamic height based on amount
+    const perspective = 5; // 3D effect depth
+
+    return (
+      <g key={index} transform={`translate(${centroid[0]}, ${centroid[1]})`}>
+        {/* Back face (shadow) */}
+        <rect
+          x={-15 + perspective}
+          y={-barHeight + perspective}
+          width={30}
+          height={barHeight}
+          fill={d3.color(color).darker(0.5)}
+          rx="2"
+        />
+        
+        {/* Side face */}
+        <rect
+          x={-15 + perspective}
+          y={-barHeight}
+          width={perspective}
+          height={barHeight}
+          fill={d3.color(color).darker(0.3)}
+          rx="1"
+        />
+        
+        {/* Front face */}
+        <rect
+          x={-15}
+          y={-barHeight}
+          width={30}
+          height={barHeight}
+          fill={color}
+          rx="2"
+          style={{ filter: "url(#bar-glow)" }}
+        />
+        
+        {/* Top face */}
+        <rect
+          x={-15}
+          y={-barHeight - perspective / 2}
+          width={30 + perspective}
+          height={perspective}
+          fill={d3.color(color).brighter(0.2)}
+          rx="1"
+        />
+      </g>
+    );
+  };
+
   return (
-    <svg width={window.innerWidth} height={window.innerHeight} viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`}> 
-      {geoData && geoData.features.map((feature, index) => {
-        const stateName = feature.properties?.NAME_1?.toLowerCase(); // Updated property
-        const stateData = hoverData?.find(data => data.name?.toLowerCase() === stateName);
+    <div style={{ position: 'relative' }}>
+      <svg width={window.innerWidth} height={window.innerHeight}>
+        <defs>
+          <filter id="bar-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="glow"/>
+            <feMerge>
+              <feMergeNode in="glow"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
 
-        return (
-          <path
-            key={index}
-            d={pathGenerator(feature)}
-            fill={stateData ? 'lightblue' : 'gray'}
-            stroke="#000"
-            strokeWidth={0.5}
-            onMouseEnter={() => {
-              if (stateData) {
-                d3.select(`#tooltip-${index}`).style('display', 'block');
-              }
-            }}
-            onMouseLeave={() => {
-              d3.select(`#tooltip-${index}`).style('display', 'none');
-            }}
-          />
-        );
-      })}
+        {geoData && geoData.features.map((feature, index) => {
+          const stateName = feature.properties?.NAME_1?.toLowerCase();
+          const stateData = hoverData?.find(data => data.name?.toLowerCase() === stateName);
+          const centroid = pathGenerator.centroid(feature);
 
-      {geoData && geoData.features.map((feature, index) => {
-        const stateName = feature.properties?.NAME_1?.toLowerCase(); // Updated property
-        const stateData = hoverData?.find(data => data.name?.toLowerCase() === stateName);
+          return (
+            <g key={index}
+              onMouseEnter={(e) => setTooltip({ 
+                name: stateName, 
+                amount: stateData?.metric[0].amount, 
+                x: e.clientX, 
+                y: e.clientY 
+              })}
+              onMouseLeave={() => setTooltip(null)}>
+              
+              <path
+                d={pathGenerator(feature)}
+                fill={getColor(stateData)}
+                stroke="#000"
+                strokeWidth={0.5}
+              />
+              
+              {stateData && (
+                <g transform={`translate(0, ${centroid[1]})`}>
+                  {create3DBar(
+                    centroid,
+                    stateData.metric[0].amount,
+                    index,
+                    getColor(stateData)
+                  )}
+                </g>
+              )}
+            </g>
+          );
+        })}
+      </svg>
 
-        return stateData ? (
-          <text
-            key={`tooltip-${index}`}
-            id={`tooltip-${index}`}
-            x={pathGenerator.centroid(feature)[0]}
-            y={pathGenerator.centroid(feature)[1]}
-            textAnchor="middle"
-            fill="black"
-            fontSize="10px"
-            style={{ display: 'none', background: 'white' }}
-          >
-            {`${stateName.toUpperCase()}: ${stateData.metric[0].count} Txns, ₹${(stateData.metric[0].amount / 1e9).toFixed(2)}B`}
-          </text>
-        ) : null;
-      })}
-    </svg>
+      {tooltip && (
+        <div style={{
+          position: 'absolute',
+          left: tooltip.x,
+          top: tooltip.y,
+          background: 'white',
+          padding: '5px',
+          border: '1px solid black',
+          pointerEvents: 'none'
+        }}>
+          <strong>{tooltip.name}</strong><br />
+          Transactions: {tooltip.amount}
+        </div>
+      )}
+    </div>
   );
 };
 
